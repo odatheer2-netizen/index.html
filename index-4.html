@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>لنبصر معاً</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Tajawal',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;direction:rtl}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0f172a}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+
+/* HEADER */
+.header{background:linear-gradient(90deg,#0ea5e9,#6366f1);padding:5px 10px;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px #0ea5e966}
+.header-title{font-weight:800;font-size:13px;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.live-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.breadcrumb{font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 12px;background:#1e293b;border-bottom:1px solid #334155}
+.breadcrumb span{cursor:pointer;text-decoration:underline}
+.breadcrumb span:hover{color:#fff}
+.nav-btns{display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;flex-shrink:0}
+.nav-btns::-webkit-scrollbar{display:none}
+.nav-btn{background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:20px;padding:4px 10px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:600;font-size:11px;transition:.2s;white-space:nowrap;flex-shrink:0}
+.nav-btn.active{background:rgba(255,255,255,0.35)}
+.nav-btn:hover{background:rgba(255,255,255,0.25)}
+
+/* VOL BAR */
+.vol-bar{background:#1e293b;border-bottom:1px solid #334155;padding:7px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vol-bar input{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:7px;padding:5px 11px;font-family:'Tajawal',sans-serif;font-size:13px;flex:1;min-width:110px;max-width:200px}
+.vol-bar input:focus{outline:2px solid #0ea5e9}
+.vol-counter{font-size:11px;color:#60a5fa;background:#0ea5e922;border:1px solid #0ea5e944;border-radius:20px;padding:2px 10px;white-space:nowrap}
+.online-badge{font-size:11px;color:#22c55e;background:#22c55e18;border:1px solid #22c55e33;border-radius:20px;padding:2px 9px;white-space:nowrap;margin-right:auto}
+.new-alert{background:#f59e0b;color:#000;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;animation:pulse 1s infinite;display:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+/* CONTENT */
+.content{padding:14px 16px;max-width:1500px;margin:0 auto}
+
+/* STATS BAR */
+.stats-bar{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,0.06);border-radius:9px;padding:8px 13px;text-align:center;min-width:78px;border:1px solid transparent}
+.stat-card .val{font-size:21px;font-weight:800}
+.stat-card .lbl{font-size:10px;color:#94a3b8;margin-top:1px}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 10px;font-family:'Tajawal',sans-serif;font-size:13px}
+.toolbar input{flex:1;min-width:150px}
+.toolbar input:focus,.toolbar select:focus{outline:2px solid #0ea5e9}
+.btn-primary{background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:8px;padding:7px 13px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;font-size:13px;white-space:nowrap}
+.btn-secondary{background:rgba(255,255,255,0.07);border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:7px 10px;cursor:pointer;font-size:13px;white-space:nowrap}
+.btn-green{background:#14532d;border:1px solid #16a34a55;color:#86efac;border-radius:8px;padding:7px 12px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:600}
+.btn-danger{background:#450a0a;border:1px solid #dc262655;color:#fca5a5;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+
+/* EVENTS GRID */
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.event-card{background:rgba(255,255,255,0.05);border:1px solid #334155;border-radius:12px;padding:16px;cursor:pointer;transition:.2s;position:relative}
+.event-card:hover{border-color:#0ea5e9;background:rgba(14,165,233,0.08);transform:translateY(-2px)}
+.event-card .ev-icon{font-size:28px;margin-bottom:8px}
+.event-card .ev-name{font-size:16px;font-weight:700;color:#e2e8f0;margin-bottom:4px}
+.event-card .ev-date{font-size:12px;color:#64748b;margin-bottom:8px}
+.event-card .ev-note{font-size:12px;color:#94a3b8;margin-bottom:10px;font-style:italic}
+.event-card .ev-stats{display:flex;gap:8px;flex-wrap:wrap}
+.ev-badge{background:rgba(255,255,255,0.07);border-radius:20px;padding:3px 10px;font-size:11px;color:#94a3b8}
+.ev-badge b{color:#e2e8f0}
+.event-card .ev-actions{position:absolute;top:10px;left:10px;display:flex;gap:4px;opacity:0;transition:.2s}
+.event-card:hover .ev-actions{opacity:1}
+.ev-act-btn{background:rgba(0,0,0,0.4);border:none;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:11px}
+.add-event-card{border:2px dashed #334155;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px;color:#475569;font-size:14px}
+.add-event-card:hover{border-color:#0ea5e9;color:#0ea5e9;background:rgba(14,165,233,0.05)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #334155}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead tr{background:rgba(14,165,233,0.15)}
+th{padding:9px 8px;text-align:right;color:#7dd3fc;font-weight:700;white-space:nowrap;border-bottom:1px solid #334155}
+tbody tr:nth-child(even){background:rgba(255,255,255,0.02)}
+tbody tr:hover{background:rgba(14,165,233,0.07);cursor:pointer}
+td{padding:7px 8px;border-bottom:1px solid #1e293b;white-space:nowrap;vertical-align:middle}
+.tfoot-info{padding:7px 2px;color:#475569;font-size:11px}
+
+/* BADGE */
+.badge{border-radius:5px;padding:2px 7px;font-size:11px;font-weight:600;white-space:nowrap}
+.act-btn{border:none;border-radius:5px;padding:3px 7px;cursor:pointer;font-size:11px;margin-left:3px}
+
+/* ROW EXPAND */
+.row-detail{background:#0f172a;border-bottom:2px solid #0ea5e922}
+.row-detail td{padding:10px 14px}
+.detail-grid{display:flex;flex-wrap:wrap;gap:8px}
+.detail-item{background:#1e293b;border-radius:7px;padding:5px 11px;font-size:12px;border:1px solid #334155}
+.detail-item .dk{color:#94a3b8;font-size:10px}
+.detail-item .dv{color:#e2e8f0;font-weight:600;margin-top:1px}
+
+/* PANEL */
+.panel-overlay{position:fixed;inset:0;background:#000b;z-index:200;display:none;align-items:flex-start;justify-content:flex-end}
+.panel-overlay.open{display:flex}
+.panel{background:#1e293b;border-left:1px solid #334155;width:min(460px,100vw);height:100vh;overflow-y:auto;padding:18px;animation:slideIn .22s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.panel-title{font-size:15px;font-weight:700;color:#60a5fa}
+.close-btn{background:rgba(255,255,255,0.08);border:none;color:#94a3b8;border-radius:7px;padding:5px 9px;cursor:pointer;font-size:15px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:3px}
+.field.full{grid-column:span 2}
+.field label{font-size:11px;color:#94a3b8;font-weight:600}
+.field input,.field select,.field textarea{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:7px;padding:7px 9px;font-family:'Tajawal',sans-serif;font-size:13px;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid #0ea5e9;border-color:#0ea5e9}
+.field textarea{resize:vertical;min-height:52px}
+.panel-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn-save{background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:8px;padding:9px 22px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;flex:1}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.btn-cancel-p{background:rgba(255,255,255,0.07);border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:9px 14px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:13px}
+
+/* EVENT PANEL */
+.ev-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.ev-field label{font-size:12px;color:#94a3b8;font-weight:600}
+.ev-field input,.ev-field select,.ev-field textarea{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:7px;padding:8px 10px;font-family:'Tajawal',sans-serif;font-size:14px;width:100%}
+.ev-field input:focus,.ev-field textarea:focus{outline:2px solid #0ea5e9}
+.ev-field textarea{resize:vertical;min-height:60px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.stat-box{background:rgba(255,255,255,0.04);border:1px solid #334155;border-radius:12px;padding:14px}
+.stat-box h3{font-size:12px;color:#7dd3fc;margin-bottom:11px;font-weight:700}
+.bar-row{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.bar-row .bl{flex:1;font-size:11px;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-fill{height:6px;border-radius:3px;min-width:3px;transition:.5s}
+.bar-row .bn{font-size:12px;font-weight:700;min-width:16px}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:#475569;border:1px dashed #334155;border-radius:12px}
+.empty .icon{font-size:38px;margin-bottom:9px}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;gap:10px;color:#475569}
+.spinner{width:20px;height:20px;border:3px solid #334155;border-top-color:#0ea5e9;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #334155;border-radius:9px;padding:9px 18px;font-size:13px;z-index:999;box-shadow:0 4px 20px #000a;animation:fadeUp .3s ease;white-space:nowrap}
+@keyframes fadeUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* EVENT BANNER */
+.event-banner{background:linear-gradient(135deg,#1e3a5f,#2d1b69);border:1px solid #0ea5e944;border-radius:11px;padding:13px 16px;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.event-banner .eb-name{font-size:16px;font-weight:800;color:#7dd3fc}
+.event-banner .eb-date{font-size:12px;color:#64748b;margin-top:2px}
+.event-banner .eb-note{font-size:12px;color:#94a3b8;margin-top:3px;font-style:italic}
+.event-banner .eb-right{display:flex;gap:6px;align-items:center}
+
+@media(max-width:560px){
+  .form-grid{grid-template-columns:1fr}
+  .field.full{grid-column:span 1}
+  .stats-bar{gap:5px}
+  .stat-card{min-width:68px;padding:6px 9px}
+  .stat-card .val{font-size:18px}
+  .events-grid{grid-template-columns:1fr}
+  .content{padding:10px 10px}
+  .toolbar{gap:6px}
+  .panel{width:100vw}
+  .event-banner{padding:10px 12px}
+  .event-banner .eb-name{font-size:14px}
+}
+
+/* ── VOLUNTEERS ─────────────────────────────────────────────────── */
+.vol-card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s}
+.vol-card:hover{border-color:#6366f155;background:#1e293b}
+.vol-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.vol-info{flex:1;min-width:0}
+.vol-name{font-size:14px;font-weight:700;color:#e2e8f0}
+.vol-meta{font-size:11px;color:#64748b;margin-top:2px}
+.vol-badge-status{font-size:10px;font-weight:700;border-radius:20px;padding:2px 8px;border:1px solid}
+.vol-badge-pending{color:#f59e0b;border-color:#f59e0b44;background:#f59e0b11}
+.vol-badge-approved{color:#22c55e;border-color:#22c55e44;background:#22c55e11}
+.vol-profile{padding:0}
+.vp-header{background:linear-gradient(135deg,#1e3a5f,#2d1b69);padding:24px 16px;text-align:center;border-radius:0}
+.vp-avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 10px}
+.vp-name{font-size:20px;font-weight:800;color:#e2e8f0}
+.vp-meta{font-size:12px;color:#94a3b8;margin-top:4px}
+.vp-stats{display:flex;gap:8px;padding:12px 14px;background:#0f172a;flex-wrap:wrap}
+.vp-stat{flex:1;min-width:80px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:8px;text-align:center}
+.vp-stat .v{font-size:20px;font-weight:800;color:#60a5fa}
+.vp-stat .l{font-size:10px;color:#64748b;margin-top:2px}
+.vp-records{padding:12px 14px}
+.vol-reg-box{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:20px;max-width:420px;margin:20px auto}
+.vol-reg-box h3{font-size:16px;font-weight:800;margin-bottom:14px;color:#e2e8f0;text-align:center}
+.reg-field{margin-bottom:12px}
+.reg-field label{font-size:12px;color:#94a3b8;display:block;margin-bottom:4px}
+.reg-field input, .reg-field select{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 12px;color:#e2e8f0;font-family:'Tajawal',sans-serif;font-size:13px;box-sizing:border-box}
+.panel-overlay2{position:fixed;inset:0;background:#000a;z-index:300;display:none;align-items:flex-end;justify-content:center}
+.panel-overlay2.open{display:flex}
+.panel2{background:#0f172a;border-radius:20px 20px 0 0;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;border-top:1px solid #334155}
+.panel2-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e293b;position:sticky;top:0;background:#0f172a;z-index:1}
+.panel2-title{font-size:15px;font-weight:800;color:#e2e8f0}
+
+
+/* ── ROLES & ACTIVITY ──────────────────────────────────────────────── */
+.role-badge{font-size:10px;font-weight:700;border-radius:12px;padding:2px 8px;border:1px solid}
+.role-supervisor{color:#f59e0b;border-color:#f59e0b55;background:#f59e0b11}
+.role-volunteer{color:#22c55e;border-color:#22c55e55;background:#22c55e11}
+.role-reader{color:#60a5fa;border-color:#60a5fa55;background:#60a5fa11}
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #1e293b}
+.activity-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.activity-text{font-size:12px;color:#94a3b8;flex:1}
+.activity-time{font-size:10px;color:#475569;white-space:nowrap}
+/* ── CHAT ───────────────────────────────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:320px}
+.chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+.chat-msg{max-width:80%;padding:8px 12px;border-radius:12px;font-size:12px;line-height:1.5}
+.chat-msg.mine{background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;align-self:flex-start;border-radius:12px 12px 3px 12px}
+.chat-msg.theirs{background:#1e293b;color:#e2e8f0;align-self:flex-end;border-radius:12px 12px 12px 3px;border:1px solid #334155}
+.chat-msg .msg-meta{font-size:10px;opacity:.7;margin-bottom:3px}
+.chat-input-row{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #1e293b;background:#0f172a}
+.chat-input-row input{flex:1;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:20px;padding:7px 13px;font-family:'Tajawal',sans-serif;font-size:13px}
+.chat-send-btn{background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0}
+/* ── NOTES ──────────────────────────────────────────────────────────── */
+.note-item{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.note-item .note-author{font-size:11px;font-weight:700;color:#7dd3fc}
+.note-item .note-time{font-size:10px;color:#475569}
+.note-item .note-text{font-size:13px;color:#e2e8f0;margin-top:4px}
+.tab-btns{display:flex;gap:6px;margin-bottom:12px}
+.tab-btn{flex:1;padding:7px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;font-family:'Tajawal',sans-serif;font-size:12px;font-weight:600;transition:.2s}
+.tab-btn.active{background:linear-gradient(90deg,#0ea5e9,#6366f1);color:#fff;border-color:transparent}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">
+    <img src="data:image/png;base64,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" alt="لنبصر معاً" style="height:28px;width:auto;object-fit:contain"/>
+    <span>لنبصر معاً</span>
+    <div class="live-dot"></div>
+    <span id="newAlert" class="new-alert" onclick="dismissAlert()">🔔 جديد!</span>
+  </div>
+  <div class="nav-btns" id="navBtns">
+    <button class="nav-btn active" id="nb-main" onclick="goHome()">🏠 الفعاليات</button>
+    <button class="nav-btn" id="nb-all" onclick="showAllRecords()">📋 كل المستفيدين</button>
+    <button class="nav-btn" id="nb-stats" onclick="showGlobalStats()">📊 إحصائيات</button>
+    <button class="nav-btn" id="nb-vols" onclick="showVolunteers()">👥 المتطوعون</button>
+  </div>
+</div>
+<div class="breadcrumb" id="breadcrumb"></div>
+
+<!-- VOL BAR -->
+<div class="vol-bar">
+  <span style="font-size:12px;color:#94a3b8;white-space:nowrap">👤 اسمك:</span>
+  <input type="text" id="volName" placeholder="اكتب اسمك قبل الإضافة" oninput="saveVolName()" maxlength="40"/>
+  <span class="vol-counter" id="myCount">سجلاتي: 0</span>
+  <span class="online-badge" id="onlineBadge">🟢 متصل</span>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="mainContent">
+  <div class="loading"><div class="spinner"></div>جاري التحميل...</div>
+</div>
+
+<!-- PANEL: Add/Edit Record -->
+<div class="panel-overlay" id="recPanelOverlay" onclick="overlayClick(event,'recPanelOverlay')">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title" id="recPanelTitle">➕ إضافة مستفيد</div>
+      <button class="close-btn" onclick="closeRecPanel()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="field full"><label>الاسم الكامل *</label><input type="text" id="f-name" placeholder="اسم المستفيد"/></div>
+      <div class="field"><label>الجنس</label><select id="f-gender"><option>أنثى</option><option>ذكر</option></select></div>
+      <div class="field"><label>العمر *</label><input type="number" id="f-age" placeholder="السنوات" min="1" max="120"/></div>
+      <div class="field"><label>PMH</label>
+        <select id="f-pmh"><option>Healthy</option><option>1-DM</option><option>Cardiac diseases</option><option>Others</option></select></div>
+      <div class="field"><label>POH</label>
+        <select id="f-poh"><option>Healthy</option><option>Refractive Error</option><option>Others</option></select></div>
+      <div class="field"><label>VA — RE (يمنى)</label>
+        <select id="f-va-re"><option>—</option><option>20/20</option><option>20/25</option><option>20/30</option><option>20/40</option><option>20/50</option><option>20/70</option><option>20/80</option><option>20/100</option><option>20/200</option></select></div>
+      <div class="field"><label>VA — LE (يسرى)</label>
+        <select id="f-va-le"><option>—</option><option>20/20</option><option>20/25</option><option>20/30</option><option>20/40</option><option>20/50</option><option>20/70</option><option>20/80</option><option>20/100</option><option>20/200</option></select></div>
+      <div class="field"><label>OBJ Diagnosis</label>
+        <select id="f-obj"><option>—</option><option>Healthy</option><option>Refractive Error</option><option>Myopia</option><option>Hyperopia</option><option>Compound Myopic astigmatism</option><option>Compound Hyperopic astigmatism</option><option>Simple hyperoic astigmatism</option><option>Others</option></select></div>
+      <div class="field"><label>CT — الحول</label>
+        <select id="f-ct"><option>—</option><option>NAD</option><option>Phoria</option><option>Esotropia</option><option>Exotropia</option></select></div>
+      <div class="field"><label>CV — الألوان</label>
+        <select id="f-cv"><option>—</option><option>Pass</option><option>fail</option></select></div>
+      <div class="field"><label>Motility — العضلات</label>
+        <select id="f-motility"><option>—</option><option>Pass</option><option>fail</option></select></div>
+      <div class="field"><label>External Observation</label>
+        <select id="f-ext"><option>—</option><option>NAD</option><option>Abnormal</option></select></div>
+      <div class="field"><label>التحويل</label>
+        <select id="f-ref"><option>—</option><option>Pass</option><option>Feferral</option></select></div>
+      <div class="field full"><label>سبب التحويل</label>
+        <input type="text" id="f-ref-reason" placeholder="اختياري"/></div>
+      <div class="field full"><label>ملاحظات</label>
+        <textarea id="f-note" placeholder="ملاحظات إضافية"></textarea></div>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-save" id="recSaveBtn" onclick="saveRecord()">💾 حفظ</button>
+      <button class="btn-cancel-p" onclick="closeRecPanel()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: Add/Edit Event -->
+<div class="panel-overlay" id="evPanelOverlay" onclick="overlayClick(event,'evPanelOverlay')">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title" id="evPanelTitle">➕ إضافة فعالية جديدة</div>
+      <button class="close-btn" onclick="closeEvPanel()">✕</button>
+    </div>
+    <div class="ev-field">
+      <label>🏫 اسم المكان / المدرسة *</label>
+      <input type="text" id="ev-name" placeholder="مثال: مدرسة الأمل الابتدائية"/>
+    </div>
+    <div class="ev-field">
+      <label>📅 التاريخ</label>
+      <input type="date" id="ev-date"/>
+    </div>
+    <div class="ev-field">
+      <label>📍 الموقع / العنوان</label>
+      <input type="text" id="ev-location" placeholder="اختياري"/>
+    </div>
+    <div class="ev-field">
+      <label>📝 ملاحظات</label>
+      <textarea id="ev-note" placeholder="وصف الفعالية أو أي ملاحظات إضافية"></textarea>
+    </div>
+    <div class="panel-actions">
+      <button class="btn-save" id="evSaveBtn" onclick="saveEvent()">💾 حفظ الفعالية</button>
+      <button class="btn-cancel-p" onclick="closeEvPanel()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Firebase ──────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyCOWU60uZYt47d8Sgv7h0c6Z08t6vj8bPE",
+  authDomain: "screening-schools.firebaseapp.com",
+  databaseURL: "https://screening-schools-default-rtdb.firebaseio.com",
+  projectId: "screening-schools",
+  storageBucket: "screening-schools.firebasestorage.app",
+  messagingSenderId: "60555044048",
+  appId: "1:60555044048:web:9eeeb694ac52b46b95b4d5"
+});
+const db = firebase.database();
+const eventsRef = db.ref('events');
+const recordsRef = db.ref('records');
+const volsRef = db.ref('volunteers');
+const activityRef = db.ref('activity');
+const chatRef = db.ref('chat');
+const notesRef = db.ref('notes');
+
+// ── State ─────────────────────────────────────────────────────────────
+let events = {};
+let records = {};
+let volunteers = {};
+let activityLog = {};
+let chatMessages = {};
+let eventNotes = {};
+let currentChatEventId = null;
+let volName = localStorage.getItem('vol_name') || '';
+let currentView = 'home'; // home | event | all | stats
+let currentEventId = null;
+let editRecId = null;
+let editEvId = null;
+let expandedId = null;
+
+// ── Init ──────────────────────────────────────────────────────────────
+document.getElementById('volName').value = volName;
+
+// Real-time listeners
+eventsRef.on('value', snap => {
+  events = snap.val() || {};
+  if (currentView === 'home') renderHome();
+  if (currentView === 'stats') renderGlobalStats();
+  updateBreadcrumb();
+});
+
+recordsRef.on('value', snap => {
+  const prev = Object.keys(records).length;
+  records = snap.val() || {};
+  const curr = Object.keys(records).length;
+  if (prev > 0 && curr > prev) showNewAlert();
+  updateMyCount();
+  if (currentView === 'event') renderEventView();
+  if (currentView === 'all') renderAllView();
+  if (currentView === 'stats') renderGlobalStats();
+  document.getElementById('onlineBadge').textContent = '🟢 ' + new Date().toLocaleTimeString('ar');
+}, () => {
+  document.getElementById('onlineBadge').textContent = '🔴 انقطع الاتصال';
+  document.getElementById('onlineBadge').style.color = '#f87171';
+});
+
+volsRef.on('value', snap => {
+  volunteers = snap.val() || {};
+  if (currentView === 'volunteers') renderVolunteers();
+});
+activityRef.limitToLast(50).on('value', snap => {
+  activityLog = snap.val() || {};
+});
+chatRef.on('value', snap => {
+  chatMessages = snap.val() || {};
+  if (currentChatEventId) renderChatMessages(currentChatEventId);
+});
+notesRef.on('value', snap => {
+  eventNotes = snap.val() || {};
+});
+
+// ── Vol ───────────────────────────────────────────────────────────────
+function saveVolName() {
+  volName = document.getElementById('volName').value.trim();
+  localStorage.setItem('vol_name', volName);
+  updateMyCount();
+}
+function updateMyCount() {
+  const n = Object.values(records).filter(r => r.addedBy === volName && volName).length;
+  document.getElementById('myCount').textContent = `سجلاتي: ${n}`;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────
+function setActiveNav(id) {
+  ['nb-main','nb-all','nb-stats','nb-vols'].forEach(n => document.getElementById(n).classList.remove('active'));
+  if (id) document.getElementById(id).classList.add('active');
+}
+
+function goHome() {
+  currentView = 'home';
+  currentEventId = null;
+  expandedId = null;
+  statsFilterEventId = '';
+  setActiveNav('nb-main');
+  updateBreadcrumb();
+  renderHome();
+}
+
+function showAllRecords() {
+  currentView = 'all';
+  currentEventId = null;
+  expandedId = null;
+  setActiveNav('nb-all');
+  updateBreadcrumb();
+  renderAllView();
+}
+
+function showGlobalStats() {
+  currentView = 'stats';
+  setActiveNav('nb-stats');
+  updateBreadcrumb();
+  renderGlobalStats();
+}
+
+function openEvent(evId) {
+  currentView = 'event';
+  currentEventId = evId;
+  expandedId = null;
+  setActiveNav(null);
+  updateBreadcrumb();
+  renderEventView();
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  if (currentView === 'home' || !currentView) { bc.innerHTML = ''; return; }
+  if (currentView === 'all') { bc.innerHTML = `<span onclick="goHome()">🏠 الفعاليات</span> ← كل المستفيدين`; return; }
+  if (currentView === 'stats') { bc.innerHTML = `<span onclick="goHome()">🏠 الفعاليات</span> ← الإحصائيات`; return; }
+  if (currentView === 'volunteers') { bc.innerHTML = `<span onclick="goHome()">🏠 الفعاليات</span> ← المتطوعون`; return; }
+  if (currentView === 'event' && currentEventId && events[currentEventId]) {
+    bc.innerHTML = `<span onclick="goHome()">🏠 الفعاليات</span> ← ${events[currentEventId].name}`;
+  }
+}
+
+// ── HOME — Events Grid ────────────────────────────────────────────────
+function renderHome() {
+  const evArr = Object.entries(events).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+  const totalRecs = Object.keys(records).length;
+  const totalRef = Object.values(records).filter(r=>r.referral==='Feferral').length;
+  const totalVols = new Set(Object.values(records).map(r=>r.addedBy).filter(Boolean)).size;
+
+  let html = `
+    <div class="stats-bar">
+      <div class="stat-card" style="border-color:#6366f144"><div class="val" style="color:#818cf8">${evArr.length}</div><div class="lbl">فعاليات</div></div>
+      <div class="stat-card" style="border-color:#60a5fa44"><div class="val" style="color:#60a5fa">${totalRecs}</div><div class="lbl">إجمالي المستفيدين</div></div>
+      <div class="stat-card" style="border-color:#f59e0b44"><div class="val" style="color:#f59e0b">${totalRef}</div><div class="lbl">تحويل</div></div>
+      <div class="stat-card" style="border-color:#34d39944"><div class="val" style="color:#34d399">${totalVols}</div><div class="lbl">متطوعون</div></div>
+    </div>
+    <div class="events-grid">`;
+
+  for (const [id, ev] of evArr) {
+    const evRecs = Object.values(records).filter(r => r.eventId === id);
+    const evRef = evRecs.filter(r=>r.referral==='Feferral').length;
+    const incomplete = evRecs.filter(r=>!isComplete(r)).length;
+    const dateStr = ev.date ? new Date(ev.date+'T00:00:00').toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'}) : '';
+    html += `
+      <div class="event-card" onclick="openEvent('${id}')">
+        <div class="ev-actions" onclick="event.stopPropagation()">
+          <button class="ev-act-btn" style="color:#60a5fa" onclick="openEvPanel('${id}')">✏️</button>
+          <button class="ev-act-btn" style="color:#a78bfa" onclick="openEventChat('${id}')">💬</button>
+          <button class="ev-act-btn" style="color:#f87171" onclick="deleteEvent('${id}')">🗑️</button>
+        </div>
+        <div class="ev-icon">🏫</div>
+        <div class="ev-name">${ev.name}</div>
+        ${dateStr ? `<div class="ev-date">📅 ${dateStr}</div>` : ''}
+        ${ev.location ? `<div class="ev-date">📍 ${ev.location}</div>` : ''}
+        ${ev.note ? `<div class="ev-note">${ev.note}</div>` : ''}
+        <div class="ev-stats">
+          <span class="ev-badge">👥 <b>${evRecs.length}</b> مستفيد</span>
+          ${evRef ? `<span class="ev-badge" style="color:#f59e0b">🔀 <b>${evRef}</b> تحويل</span>` : ''}
+          ${incomplete ? `<span class="ev-badge" style="color:#f59e0b">⏳ <b>${incomplete}</b> ناقص</span>` : ''}
+          ${!incomplete && evRecs.length ? `<span class="ev-badge" style="color:#22c55e">✅ مكتملة</span>` : ''}
+        </div>
+      </div>`;
+  }
+
+  html += `
+      <div class="event-card add-event-card" onclick="openEvPanel()">
+        <span style="font-size:32px">➕</span>
+        <span>إضافة فعالية جديدة</span>
+      </div>
+    </div>`;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ── EVENT VIEW ────────────────────────────────────────────────────────
+function renderEventView() {
+  if (!currentEventId || !events[currentEventId]) { goHome(); return; }
+  const ev = events[currentEventId];
+  const evRecs = Object.entries(records)
+    .filter(([,r]) => r.eventId === currentEventId)
+    .map(([id,r]) => ({...r,id}))
+    .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  const totalRef = evRecs.filter(r=>r.referral==='Feferral').length;
+  const incomplete = evRecs.filter(r=>!isComplete(r)).length;
+  const dateStr = ev.date ? new Date(ev.date+'T00:00:00').toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'}) : '';
+
+  let html = `
+    <div class="event-banner">
+      <div>
+        <div class="eb-name">🏫 ${ev.name}</div>
+        ${dateStr ? `<div class="eb-date">📅 ${dateStr}${ev.location ? ' &nbsp;|&nbsp; 📍 '+ev.location : ''}</div>` : (ev.location ? `<div class="eb-date">📍 ${ev.location}</div>` : '')}
+        ${ev.note ? `<div class="eb-note">${ev.note}</div>` : ''}
+      </div>
+      <div class="eb-right">
+        <span class="ev-badge">👥 <b>${evRecs.length}</b> مستفيد</span>
+        ${totalRef ? `<span class="ev-badge" style="color:#f59e0b">🔀 <b>${totalRef}</b> تحويل</span>` : ''}
+        ${incomplete ? `<span class="ev-badge" style="color:#f59e0b">⏳ <b>${incomplete}</b> ناقص</span>` : ''}
+      </div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="evSearch" placeholder="🔍 بحث..." oninput="renderEventView()"/>
+      <select id="evFilterRef" onchange="renderEventView()">
+        <option value="">التحويل: الكل</option>
+        <option value="Feferral">تحويل فقط</option>
+        <option value="Pass">Pass فقط</option>
+      </select>
+      <select id="evFilterComplete" onchange="renderEventView()">
+        <option value="">الكل</option>
+        <option value="incomplete">غير مكتملة</option>
+        <option value="complete">مكتملة</option>
+      </select>
+      <button class="btn-primary" onclick="openRecPanel()">➕ إضافة مستفيد</button>
+      <button class="btn-green" onclick="exportCSV('${currentEventId}')">⬇️ CSV</button>
+    </div>`;
+
+  html += renderRecordsTable(evRecs, true);
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ── ALL RECORDS VIEW ──────────────────────────────────────────────────
+function renderAllView() {
+  const allRecs = Object.entries(records)
+    .map(([id,r]) => ({...r,id}))
+    .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  const totalRef = allRecs.filter(r=>r.referral==='Feferral').length;
+  const incomplete = allRecs.filter(r=>!isComplete(r)).length;
+
+  let html = `
+    <div class="stats-bar">
+      <div class="stat-card" style="border-color:#60a5fa44"><div class="val" style="color:#60a5fa">${allRecs.length}</div><div class="lbl">إجمالي المستفيدين</div></div>
+      <div class="stat-card" style="border-color:#f59e0b44"><div class="val" style="color:#f59e0b">${totalRef}</div><div class="lbl">تحويل</div></div>
+      <div class="stat-card" style="border-color:#34d39944"><div class="val" style="color:#34d399">${allRecs.filter(r=>r.gender==='ذكر').length}</div><div class="lbl">ذكور</div></div>
+      <div class="stat-card" style="border-color:#f472b644"><div class="val" style="color:#f472b6">${allRecs.filter(r=>r.gender==='أنثى').length}</div><div class="lbl">إناث</div></div>
+      <div class="stat-card" style="border-color:#a78bfa44"><div class="val" style="color:#a78bfa">${allRecs.filter(r=>r.pmh==='1-DM').length}</div><div class="lbl">سكري</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="allSearch" placeholder="🔍 بحث بالاسم أو الفعالية..." oninput="renderAllView()"/>
+      <select id="allFilterGender" onchange="renderAllView()">
+        <option value="">الجنس: الكل</option>
+        <option value="ذكر">ذكر</option>
+        <option value="أنثى">أنثى</option>
+      </select>
+      <select id="allFilterRef" onchange="renderAllView()">
+        <option value="">التحويل: الكل</option>
+        <option value="Feferral">تحويل فقط</option>
+        <option value="Pass">Pass فقط</option>
+      </select>
+      <select id="allFilterEvent" onchange="renderAllView()">
+        <option value="">الفعالية: الكل</option>
+        ${Object.entries(events).map(([id,ev])=>`<option value="${id}">${ev.name}</option>`).join('')}
+      </select>
+      <button class="btn-green" onclick="exportCSV(null)">⬇️ CSV كامل</button>
+    </div>`;
+
+  // apply filters
+  const s = (document.getElementById('allSearch')?.value||'').toLowerCase();
+  const fg = document.getElementById('allFilterGender')?.value||'';
+  const fr = document.getElementById('allFilterRef')?.value||'';
+  const fe = document.getElementById('allFilterEvent')?.value||'';
+  let filtered = allRecs.filter(r => {
+    const evName = (r.eventId && events[r.eventId]) ? events[r.eventId].name : '';
+    return (!s || (r.name||'').toLowerCase().includes(s) || evName.toLowerCase().includes(s) || (r.addedBy||'').toLowerCase().includes(s))
+      && (!fg || r.gender===fg)
+      && (!fr || r.referral===fr)
+      && (!fe || r.eventId===fe);
+  });
+
+  html += renderRecordsTable(filtered, false, true);
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+// ── Records Table (shared) ────────────────────────────────────────────
+function renderRecordsTable(arr, inEvent=false, showEventCol=false) {
+  // apply local filters for event view
+  if (inEvent) {
+    const s = (document.getElementById('evSearch')?.value||'').toLowerCase();
+    const fr = document.getElementById('evFilterRef')?.value||'';
+    const fc = document.getElementById('evFilterComplete')?.value||'';
+    arr = arr.filter(r =>
+      (!s || (r.name||'').toLowerCase().includes(s) || (r.addedBy||'').toLowerCase().includes(s))
+      && (!fr || r.referral===fr)
+      && (!fc || (fc==='complete' ? isComplete(r) : !isComplete(r)))
+    );
+  }
+
+  if (!arr.length) return `<div class="empty"><div class="icon">📋</div><div style="font-size:15px">لا توجد سجلات</div>${inEvent ? '<div style="font-size:12px;margin-top:5px;color:#64748b">اضغط "إضافة مستفيد" للبدء</div>' : ''}</div>`;
+
+  const evColHdr = showEventCol ? '<th>الفعالية</th>' : '';
+  let html = `<div class="table-wrap"><table><thead><tr>
+    <th></th><th>الاسم</th><th>الجنس</th><th>العمر</th>
+    ${evColHdr}
+    <th>الاكتمال</th><th>VA RE</th><th>VA LE</th><th>OBJ</th><th>CT</th><th>CV</th><th>Motility</th><th>التحويل</th><th>بواسطة</th><th></th>
+  </tr></thead><tbody>`;
+
+  for (const r of arr) {
+    const gc = r.gender==='ذكر' ? '#60a5fa' : '#f472b6';
+    const complete = isComplete(r);
+    const comp = complete ? `<span style="color:#22c55e;font-size:11px">✅</span>` : `<span style="color:#f59e0b;font-size:11px">⏳</span>`;
+    const exp = expandedId === r.id;
+    const evName = (r.eventId && events[r.eventId]) ? events[r.eventId].name : '—';
+    const evColCell = showEventCol ? `<td style="color:#818cf8;font-size:11px;cursor:pointer" onclick="event.stopPropagation();openEvent('${r.eventId}')">${evName}</td>` : '';
+
+    html += `<tr onclick="toggleExpand('${r.id}')" style="${!complete?'border-right:3px solid #f59e0b55':''}">
+      <td style="color:#475569;font-size:10px">${exp?'▲':'▼'}</td>
+      <td style="font-weight:700;color:#e2e8f0;min-width:100px">${r.name||'—'}</td>
+      <td style="color:${gc}">${r.gender||'—'}</td>
+      <td style="color:#94a3b8">${r.age||'—'}</td>
+      ${evColCell}
+      <td>${comp}</td>
+      <td style="font-family:monospace;color:#a5f3fc">${r.va_re||'—'}</td>
+      <td style="font-family:monospace;color:#a5f3fc">${r.va_le||'—'}</td>
+      <td>${badge(r.obj)}</td><td>${badge(r.ct)}</td>
+      <td>${badge(r.cv)}</td><td>${badge(r.motility)}</td>
+      <td>${badge(r.referral)}</td>
+      <td style="color:#7dd3fc;font-size:11px">${r.addedBy||'—'}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="act-btn" style="background:#1e3a5f;color:#60a5fa" onclick="openRecPanel('${r.id}')">✏️</button>
+        <button class="act-btn" style="background:#3f1f1f;color:#f87171" onclick="deleteRecord('${r.id}')">🗑️</button>
+      </td>
+    </tr>`;
+
+    if (exp) {
+      html += `<tr class="row-detail"><td colspan="20"><div class="detail-grid">
+        <div class="detail-item"><div class="dk">PMH</div><div class="dv">${r.pmh||'—'}</div></div>
+        <div class="detail-item"><div class="dk">POH</div><div class="dv">${r.poh||'—'}</div></div>
+        <div class="detail-item"><div class="dk">External</div><div class="dv">${r.ext||'—'}</div></div>
+        <div class="detail-item"><div class="dk">سبب التحويل</div><div class="dv">${r.ref_reason||'—'}</div></div>
+        <div class="detail-item"><div class="dk">ملاحظات</div><div class="dv">${r.note||'—'}</div></div>
+        <div class="detail-item"><div class="dk">أضيف بواسطة</div><div class="dv">${r.addedBy||'—'}</div></div>
+        ${r.lastEditedBy && r.lastEditedBy!==r.addedBy ? `<div class="detail-item"><div class="dk">آخر تعديل</div><div class="dv" style="color:#f59e0b">${r.lastEditedBy}</div></div>` : ''}
+        <div class="detail-item"><div class="dk">التاريخ</div><div class="dv">${r.createdAt ? new Date(r.createdAt).toLocaleString('ar') : '—'}</div></div>
+      </div></td></tr>`;
+    }
+  }
+  html += `</tbody></table></div><div class="tfoot-info">${arr.length} سجل — غير مكتملة: ${arr.filter(r=>!isComplete(r)).length}</div>`;
+  return html;
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────
+let statsFilterEventId = '';
+let isSupervisor = localStorage.getItem('is_supervisor') === 'true';
+const ADMIN_PHONE = '0558020766';
+const ADMIN_PASS = 'Atheer123';
+
+function renderGlobalStats() {
+  const filterEv = statsFilterEventId;
+  const allArr = Object.values(records);
+  const arr = filterEv ? allArr.filter(r => r.eventId === filterEv) : allArr;
+  const total = arr.length || 1;
+  const refs = arr.filter(r=>r.referral==='Feferral').length;
+  const evArr = Object.entries(events).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+
+  const filterLabel = filterEv && events[filterEv] ? events[filterEv].name : 'جميع الفعاليات';
+
+  // ── summary cards ──
+  let html = `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <span style="font-size:13px;color:#94a3b8;font-weight:600">عرض إحصائيات:</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="statsEvTabs">
+          <button onclick="setStatsFilter('')" style="font-family:'Tajawal',sans-serif;font-size:12px;font-weight:700;border-radius:20px;padding:4px 13px;cursor:pointer;border:none;transition:.2s;${!filterEv?'background:linear-gradient(90deg,#0ea5e9,#6366f1);color:#fff':'background:#1e293b;border:1px solid #334155;color:#94a3b8'}">
+            🌐 الكل (${allArr.length})
+          </button>
+          ${evArr.map(([id,ev])=>{
+            const c = allArr.filter(r=>r.eventId===id).length;
+            const active = filterEv===id;
+            return `<button onclick="setStatsFilter('${id}')" style="font-family:'Tajawal',sans-serif;font-size:12px;font-weight:600;border-radius:20px;padding:4px 13px;cursor:pointer;border:none;transition:.2s;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${active?'background:linear-gradient(90deg,#0ea5e9,#6366f1);color:#fff':'background:#1e293b;border:1px solid #334155;color:#94a3b8'}">
+              🏫 ${ev.name} (${c})
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
+      ${filterEv && events[filterEv] ? `
+        <div style="background:linear-gradient(135deg,#1e3a5f,#2d1b69);border:1px solid #0ea5e944;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:800;color:#7dd3fc">🏫 ${events[filterEv].name}</span>
+          ${events[filterEv].date ? `<span style="font-size:12px;color:#64748b">📅 ${new Date(events[filterEv].date+'T00:00:00').toLocaleDateString('ar-SA',{year:'numeric',month:'long',day:'numeric'})}</span>` : ''}
+          ${events[filterEv].location ? `<span style="font-size:12px;color:#64748b">📍 ${events[filterEv].location}</span>` : ''}
+        </div>` : ''}
+      <div class="stats-bar" style="margin-bottom:0">
+        <div class="stat-card" style="border-color:#60a5fa44"><div class="val" style="color:#60a5fa">${arr.length}</div><div class="lbl">المستفيدون</div></div>
+        <div class="stat-card" style="border-color:#f59e0b44"><div class="val" style="color:#f59e0b">${refs}</div><div class="lbl">تحويل</div></div>
+        <div class="stat-card" style="border-color:#34d39944"><div class="val" style="color:#34d399">${arr.filter(r=>r.gender==='ذكر').length}</div><div class="lbl">ذكور</div></div>
+        <div class="stat-card" style="border-color:#f472b644"><div class="val" style="color:#f472b6">${arr.filter(r=>r.gender==='أنثى').length}</div><div class="lbl">إناث</div></div>
+        <div class="stat-card" style="border-color:#a78bfa44"><div class="val" style="color:#a78bfa">${arr.filter(r=>isComplete(r)).length}</div><div class="lbl">مكتملة</div></div>
+        <div class="stat-card" style="border-color:#f59e0b44"><div class="val" style="color:#f59e0b">${arr.filter(r=>!isComplete(r)).length}</div><div class="lbl">ناقصة</div></div>
+      </div>
+    </div>`;
+
+  const sections = [
+    {title:'حدة البصر RE', key:'va_re', opts:['20/20','20/25','20/30','20/40','20/50','20/70','20/100','20/200'], color:'#38bdf8'},
+    {title:'CT Diagnosis', key:'ct', opts:['NAD','Phoria','Esotropia','Exotropia'], color:'#a78bfa'},
+    {title:'PMH', key:'pmh', opts:['Healthy','1-DM','Cardiac diseases','Others'], color:'#34d399'},
+    {title:'OBJ Diagnosis', key:'obj', opts:['Healthy','Refractive Error','Myopia','Hyperopia','Compound Myopic astigmatism','Compound Hyperopic astigmatism','Simple hyperoic astigmatism','Others'], color:'#60a5fa'},
+    {title:'إنتاجية المتطوعين', key:'_vol', opts:[], color:'#a78bfa'},
+  ];
+  if (!filterEv) sections.push({title:'المستفيدون لكل فعالية', key:'_ev', opts:[], color:'#818cf8'});
+
+  html += '<div class="stats-grid">';
+  for (const s of sections) {
+    html += `<div class="stat-box"><h3>${s.title}</h3>`;
+    if (s.key==='_vol') {
+      const vm = {};
+      arr.forEach(r => { if(r.addedBy) vm[r.addedBy]=(vm[r.addedBy]||0)+1; });
+      const sorted = Object.entries(vm).sort((a,b)=>b[1]-a[1]);
+      if (!sorted.length) html += '<div style="color:#475569;font-size:12px">لا توجد بيانات</div>';
+      else sorted.forEach(([n,c]) => { html += barRow(n, c, total, s.color); });
+    } else if (s.key==='_ev') {
+      const sorted = Object.entries(events).map(([id,ev]) => {
+        const c = allArr.filter(r=>r.eventId===id).length;
+        return [ev.name, c];
+      }).sort((a,b)=>b[1]-a[1]);
+      if (!sorted.length) html += '<div style="color:#475569;font-size:12px">لا توجد بيانات</div>';
+      else sorted.forEach(([n,c]) => { html += barRow(n, c, allArr.length||1, s.color); });
+    } else {
+      const counts = s.opts.map(o=>({label:o,count:arr.filter(r=>r[s.key]===o).length})).filter(d=>d.count>0);
+      if (!counts.length) html += '<div style="color:#475569;font-size:12px">لا توجد بيانات</div>';
+      else counts.forEach(d => { html += barRow(d.label, d.count, total, s.color); });
+    }
+    html += '</div>';
+  }
+
+  // Donut — referral rate
+  const pct = Math.round(refs/(arr.length||1)*100);
+  const r=44, circ=2*Math.PI*r, fill=circ*(refs/(arr.length||1));
+  html += `<div class="stat-box"><h3>نسبة التحويل</h3>
+    <div style="display:flex;justify-content:center;padding:12px">
+      <div style="position:relative;width:108px;height:108px">
+        <svg viewBox="0 0 100 100" width="108" height="108" style="transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#1e293b" stroke-width="10"/>
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#f59e0b" stroke-width="10"
+            stroke-dasharray="${fill.toFixed(1)} ${(circ-fill).toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font-size:20px;font-weight:800;color:#f59e0b">${pct}%</span>
+          <span style="font-size:10px;color:#94a3b8">${refs} من ${arr.length}</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  // CV pass/fail donut
+  const cvPass = arr.filter(r=>r.cv==='Pass').length;
+  const cvFail = arr.filter(r=>r.cv==='fail').length;
+  const cvTotal = cvPass + cvFail || 1;
+  const cvPct = Math.round(cvPass/cvTotal*100);
+  const cvFill = circ*(cvPass/cvTotal);
+  html += `<div class="stat-box"><h3>CV — الألوان</h3>
+    <div style="display:flex;justify-content:center;padding:12px">
+      <div style="position:relative;width:108px;height:108px">
+        <svg viewBox="0 0 100 100" width="108" height="108" style="transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#1e293b" stroke-width="10"/>
+          <circle cx="50" cy="50" r="${r}" fill="none" stroke="#22c55e" stroke-width="10"
+            stroke-dasharray="${cvFill.toFixed(1)} ${(circ-cvFill).toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <span style="font-size:20px;font-weight:800;color:#22c55e">${cvPct}%</span>
+          <span style="font-size:10px;color:#94a3b8">Pass</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:12px;font-size:11px">
+      <span style="color:#22c55e">✅ Pass: ${cvPass}</span>
+      <span style="color:#ef4444">❌ Fail: ${cvFail}</span>
+    </div>
+  </div>`;
+
+  html += '</div>';
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function setStatsFilter(evId) {
+  statsFilterEventId = evId;
+  renderGlobalStats();
+}
+
+function barRow(label, count, total, color) {
+  const pct = Math.max(3, count/total*130);
+  return `<div class="bar-row"><span class="bl" title="${label}">${label}</span><div class="bar-fill" style="width:${pct}px;background:${color}"></div><span class="bn" style="color:${color}">${count}</span></div>`;
+}
+
+// ── Record Panel ──────────────────────────────────────────────────────
+function openRecPanel(id) {
+  editRecId = id || null;
+  if (id && records[id]) {
+    document.getElementById('recPanelTitle').textContent = '✏️ تعديل / تكملة سجل';
+    setRecForm(records[id]);
+  } else {
+    document.getElementById('recPanelTitle').textContent = '➕ إضافة مستفيد جديد';
+    resetRecForm();
+  }
+  document.getElementById('recPanelOverlay').classList.add('open');
+}
+function closeRecPanel() { document.getElementById('recPanelOverlay').classList.remove('open'); editRecId = null; }
+
+function getRecForm() {
+  return {
+    name: fv('f-name'), gender: fv('f-gender'), age: fv('f-age'),
+    pmh: fv('f-pmh'), poh: fv('f-poh'), va_re: fv('f-va-re'), va_le: fv('f-va-le'),
+    obj: fv('f-obj'), ct: fv('f-ct'), cv: fv('f-cv'),
+    motility: fv('f-motility'), ext: fv('f-ext'),
+    referral: fv('f-ref'), ref_reason: fv('f-ref-reason'), note: fv('f-note'),
+  };
+}
+function fv(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function setRecForm(r) {
+  const m = {'f-name':r.name,'f-gender':r.gender,'f-age':r.age,'f-pmh':r.pmh,'f-poh':r.poh,
+    'f-va-re':r.va_re,'f-va-le':r.va_le,'f-obj':r.obj,'f-ct':r.ct,'f-cv':r.cv,
+    'f-motility':r.motility,'f-ext':r.ext,'f-ref':r.referral,'f-ref-reason':r.ref_reason||'','f-note':r.note||''};
+  for (const [id,val] of Object.entries(m)) { const el=document.getElementById(id); if(el&&val!==undefined) el.value=val; }
+}
+function resetRecForm() {
+  ['f-name','f-age','f-ref-reason','f-note'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-gender','f-pmh','f-poh','f-va-re','f-va-le','f-obj','f-ct','f-cv','f-motility','f-ext','f-ref']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+}
+
+async function saveRecord() {
+  if (!canEdit()) { toast('👁️ أنت في وضع القراءة فقط','#f59e0b'); return; }
+  const f = getRecForm();
+  if (!f.name||!f.age) { toast('⚠️ الاسم والعمر مطلوبان','#f59e0b'); return; }
+  if (!volName) { toast('⚠️ اكتب اسمك أولاً','#f59e0b'); return; }
+  const btn = document.getElementById('recSaveBtn');
+  btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
+  try {
+    if (editRecId) {
+      const ex = records[editRecId]||{};
+      await recordsRef.child(editRecId).update({...ex,...f,lastEditedBy:volName,lastEditedAt:Date.now()});
+      toast('✅ تم التحديث','#22c55e');
+    } else {
+      if (!currentEventId) { toast('⚠️ افتح فعالية أولاً','#f59e0b'); btn.disabled=false; btn.textContent='💾 حفظ'; return; }
+      await recordsRef.push().set({...f,eventId:currentEventId,addedBy:volName,createdAt:Date.now(),lastEditedBy:volName,lastEditedAt:Date.now()});
+      toast('✅ تم الحفظ','#22c55e');
+  logActivity(editRecId?'عدّل سجل':'أضاف سجلاً', f.name||'', editRecId?'#60a5fa':'#22c55e');
+    }
+    closeRecPanel();
+  } catch(e) { toast('❌ '+e.message,'#ef4444'); }
+  btn.disabled=false; btn.textContent='💾 حفظ';
+}
+
+async function deleteRecord(id) {
+  if (!canEdit()) { toast('👁️ أنت في وضع القراءة فقط','#f59e0b'); return; }
+  if (!confirm('حذف هذا السجل نهائياً؟')) return;
+  await recordsRef.child(id).remove();
+  toast('🗑️ تم الحذف','#f87171');
+  logActivity('حذف سجل', records[id]?.name||'', '#f87171');
+}
+
+// ── Event Panel ───────────────────────────────────────────────────────
+function openEvPanel(id) {
+  editEvId = id || null;
+  if (id && events[id]) {
+    document.getElementById('evPanelTitle').textContent = '✏️ تعديل الفعالية';
+    const ev = events[id];
+    document.getElementById('ev-name').value = ev.name||'';
+    document.getElementById('ev-date').value = ev.date||'';
+    document.getElementById('ev-location').value = ev.location||'';
+    document.getElementById('ev-note').value = ev.note||'';
+  } else {
+    document.getElementById('evPanelTitle').textContent = '➕ إضافة فعالية جديدة';
+    document.getElementById('ev-name').value='';
+    document.getElementById('ev-date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('ev-location').value='';
+    document.getElementById('ev-note').value='';
+  }
+  document.getElementById('evPanelOverlay').classList.add('open');
+}
+function closeEvPanel() { document.getElementById('evPanelOverlay').classList.remove('open'); editEvId=null; }
+
+async function saveEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  if (!name) { toast('⚠️ اسم الفعالية مطلوب','#f59e0b'); return; }
+  const btn = document.getElementById('evSaveBtn');
+  btn.disabled=true; btn.textContent='⏳ جاري الحفظ...';
+  const data = {
+    name,
+    date: document.getElementById('ev-date').value,
+    location: document.getElementById('ev-location').value.trim(),
+    note: document.getElementById('ev-note').value.trim(),
+  };
+  try {
+    if (editEvId) {
+      await eventsRef.child(editEvId).update(data);
+      toast('✅ تم تحديث الفعالية','#22c55e');
+    } else {
+      await eventsRef.push().set({...data, createdBy:volName||'غير محدد', createdAt:Date.now()});
+      toast('✅ تم إنشاء الفعالية','#22c55e');
+    }
+    closeEvPanel();
+  } catch(e) { toast('❌ '+e.message,'#ef4444'); }
+  btn.disabled=false; btn.textContent='💾 حفظ الفعالية';
+}
+
+async function deleteEvent(id) {
+  const evRecs = Object.keys(records).filter(k=>records[k].eventId===id);
+  const msg = evRecs.length
+    ? `هذه الفعالية تحتوي على ${evRecs.length} سجل. هل تريد حذف الفعالية والسجلات معاً؟`
+    : 'حذف هذه الفعالية نهائياً؟';
+  if (!confirm(msg)) return;
+  await eventsRef.child(id).remove();
+  for (const k of evRecs) await recordsRef.child(k).remove();
+  toast('🗑️ تم حذف الفعالية','#f87171');
+  goHome();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function isComplete(r) {
+  return r.va_re&&r.va_re!=='—'&&r.va_le&&r.va_le!=='—'&&r.obj&&r.obj!=='—'
+    &&r.ct&&r.ct!=='—'&&r.cv&&r.cv!=='—'&&r.motility&&r.motility!=='—'&&r.referral&&r.referral!=='—';
+}
+
+const BC={Pass:'#22c55e',Feferral:'#f59e0b',fail:'#ef4444',NAD:'#60a5fa',
+  Phoria:'#a78bfa',Esotropia:'#fb923c',Exotropia:'#f472b6',Healthy:'#34d399',Myopia:'#38bdf8',Hyperopia:'#818cf8'};
+function badge(text) {
+  if (!text||text==='—') return `<span style="color:#334155">—</span>`;
+  const c=BC[text]||'#94a3b8';
+  return `<span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}55">${text}</span>`;
+}
+
+function toggleExpand(id) {
+  expandedId = expandedId===id ? null : id;
+  if (currentView==='event') renderEventView();
+  else if (currentView==='all') renderAllView();
+}
+
+function overlayClick(e, id) { if(e.target===document.getElementById(id)) { closeRecPanel(); closeEvPanel(); } }
+
+function showNewAlert() { document.getElementById('newAlert').style.display='inline'; }
+function dismissAlert() { document.getElementById('newAlert').style.display='none'; }
+
+let toastT;
+function toast(msg,color='#60a5fa') {
+  document.querySelectorAll('.toast').forEach(e=>e.remove());
+  const el=document.createElement('div');
+  el.className='toast'; el.style.borderColor=color+'66'; el.style.color=color; el.textContent=msg;
+  document.body.appendChild(el);
+  clearTimeout(toastT); toastT=setTimeout(()=>el.remove(),3000);
+}
+
+function exportCSV(eventId) {
+  let arr = Object.values(records);
+  if (eventId) arr = arr.filter(r=>r.eventId===eventId);
+  if (!arr.length) { toast('لا توجد سجلات','#f59e0b'); return; }
+  const headers=['الاسم','الجنس','العمر','الفعالية','PMH','POH','VA RE','VA LE','OBJ','CT','CV','Motility','External','التحويل','سبب التحويل','ملاحظات','أضيف بواسطة','آخر تعديل','التاريخ'];
+  const rows=arr.map(r=>[r.name,r.gender,r.age,
+    (r.eventId&&events[r.eventId])?events[r.eventId].name:'',
+    r.pmh,r.poh,r.va_re,r.va_le,r.obj,r.ct,r.cv,r.motility,r.ext,r.referral,r.ref_reason||'',r.note||'',r.addedBy||'',r.lastEditedBy||'',
+    r.createdAt?new Date(r.createdAt).toLocaleDateString('ar'):''
+  ]);
+  const csv='\uFEFF'+[headers,...rows].map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download=`eye_${eventId?events[eventId]?.name:'all'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('✅ تم التصدير','#22c55e');
+}
+
+// ── VOLUNTEERS ────────────────────────────────────────────────────────
+
+function showVolunteers() {
+  currentView = 'volunteers';
+  setActiveNav('nb-vols');
+  updateBreadcrumb();
+  renderVolunteers();
+}
+
+function renderVolunteers() {
+  const myVolId = localStorage.getItem('my_vol_id');
+  const myVol = myVolId && volunteers[myVolId];
+  const approved = Object.entries(volunteers).filter(([,v])=>v.status==='approved');
+  const pending = Object.entries(volunteers).filter(([,v])=>v.status==='pending');
+
+  let html = '';
+
+  // Supervisor bar
+  if (isSupervisor) {
+    html += `<div style="background:#1e3a5f;border:1px solid #0ea5e944;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:13px;font-weight:700;color:#7dd3fc">🔐 وضع المشرف</span>
+      <div style="display:flex;gap:6px">
+        <button onclick="showActivityLog()" style="font-family:'Tajawal',sans-serif;font-size:11px;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44;border-radius:8px;padding:4px 10px;cursor:pointer">📋 سجل النشاط</button>
+        <button onclick="logoutSupervisor()" style="font-family:'Tajawal',sans-serif;font-size:11px;background:#ef444422;color:#f87171;border:1px solid #ef444444;border-radius:8px;padding:4px 12px;cursor:pointer">خروج</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div style="text-align:left;margin-bottom:10px">
+      <button onclick="openSupervisorLogin()" style="font-family:'Tajawal',sans-serif;font-size:11px;background:#1e293b;color:#64748b;border:1px solid #334155;border-radius:8px;padding:4px 12px;cursor:pointer">🔐 دخول المشرف</button>
+    </div>`;
+  }
+
+  // If user has registered, show their profile card at top
+  if (myVol) {
+    const myRecs = Object.values(records).filter(r=>r.addedBy===myVol.name);
+    const myRefs = myRecs.filter(r=>r.referral==='Feferral').length;
+    html += `<div style="background:linear-gradient(135deg,#1e3a5f,#2d1b69);border:1px solid #0ea5e944;border-radius:14px;padding:16px;margin-bottom:16px;cursor:pointer" onclick="openVolProfile('${myVolId}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="vol-avatar">👤</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:#7dd3fc">ملفي الشخصي</div>
+          <div style="font-size:12px;color:#94a3b8">${myVol.name} · ${myVol.year||''}</div>
+          <div style="font-size:11px;color:#64748b">${myVol.phone||''}</div>
+        </div>
+        <span class="vol-badge-status ${myVol.status==='approved'?'vol-badge-approved':'vol-badge-pending'}">${myVol.status==='approved'?'✅ معتمد':'⏳ قيد الانتظار'}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div class="vp-stat" style="flex:1"><div class="v">${myRecs.length}</div><div class="l">سجل</div></div>
+        <div class="vp-stat" style="flex:1"><div class="v" style="color:#f59e0b">${myRefs}</div><div class="l">تحويل</div></div>
+        <div class="vp-stat" style="flex:1"><div class="v" style="color:#a78bfa">${Object.keys(events).length}</div><div class="l">فعالية</div></div>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="vol-reg-box">
+      <h3>🙋 سجّل كمتطوع</h3>
+      <div class="reg-field"><label>الاسم الكامل *</label><input type="text" id="reg-name" placeholder="اسمك الثلاثي" maxlength="60"/></div>
+      <div class="reg-field"><label>رقم الجوال *</label><input type="tel" id="reg-phone" placeholder="05xxxxxxxx" maxlength="15"/></div>
+      <div class="reg-field"><label>سنة التطوع</label>
+        <select id="reg-year">
+          ${[2026,2025,2024,2023,2022,2021,2020].map(y=>`<option value="${y}">${y}</option>`).join('')}
+        </select>
+      </div>
+      <button onclick="registerVol()" style="width:100%;background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:10px;padding:10px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">
+        📩 إرسال طلب التسجيل
+      </button>
+    </div>`;
+  }
+
+  // Supervisor section - pending approvals
+  if (isSupervisor && pending.length > 0) {
+    html += `<div style="margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:#f59e0b;margin-bottom:8px">⏳ طلبات بانتظار الموافقة (${pending.length})</div>`;
+    for (const [id,v] of pending) {
+      html += `<div class="vol-card" style="margin-bottom:6px;border-color:#f59e0b33" onclick="openVolProfile('${id}')">
+        <div class="vol-avatar" style="background:linear-gradient(135deg,#92400e,#d97706)">⏳</div>
+        <div class="vol-info">
+          <div class="vol-name">${v.name}</div>
+          <div class="vol-meta">📱 ${v.phone||'—'} · 📅 ${v.year||'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px" onclick="event.stopPropagation()">
+          <button onclick="approveVol('${id}')" style="font-family:'Tajawal',sans-serif;font-size:11px;background:#22c55e22;color:#22c55e;border:1px solid #22c55e44;border-radius:6px;padding:4px 10px;cursor:pointer">✅ قبول</button>
+          <button onclick="rejectVol('${id}')" style="font-family:'Tajawal',sans-serif;font-size:11px;background:#ef444422;color:#f87171;border:1px solid #ef444444;border-radius:6px;padding:4px 10px;cursor:pointer">❌ رفض</button>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Approved volunteers
+  if (approved.length > 0) {
+    html += `<div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:8px">✅ المتطوعون المعتمدون (${approved.length})</div>`;
+    for (const [id,v] of approved) {
+      const vRecs = Object.values(records).filter(r=>r.addedBy===v.name).length;
+      html += `<div class="vol-card" style="margin-bottom:6px" onclick="openVolProfile('${id}')">
+        <div class="vol-avatar">👤</div>
+        <div class="vol-info">
+          <div class="vol-name">${v.name}</div>
+          <div class="vol-meta">📱 ${v.phone||'—'} · 📅 ${v.year||'—'} · 📋 ${vRecs} سجل</div>
+        </div>
+        <span class="vol-badge-status vol-badge-approved">✅ معتمد</span>
+      </div>`;
+    }
+  }
+
+  if (!approved.length && !pending.length && myVol) {
+    html += `<div style="text-align:center;color:#475569;padding:30px;font-size:13px">لا يوجد متطوعون آخرون بعد</div>`;
+  }
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+async function registerVol() {
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const year = document.getElementById('reg-year').value;
+  if (!name) { toast('أدخل اسمك الكامل','#f59e0b'); return; }
+  if (!phone) { toast('أدخل رقم الجوال','#f59e0b'); return; }
+  const existing = Object.entries(volunteers).find(([,v])=>v.phone===phone||v.name===name);
+  if (existing) { toast('هذا الاسم أو الجوال مسجل مسبقاً','#f59e0b'); return; }
+  const ref = await volsRef.push({ name, phone, year, role:'volunteer', status:'pending', createdAt: Date.now() });
+  localStorage.setItem('my_vol_id', ref.key);
+  // Update vol name bar
+  volName = name;
+  localStorage.setItem('vol_name', name);
+  document.getElementById('volName').value = name;
+  toast('✅ تم إرسال طلبك، انتظر موافقة المشرف','#22c55e');
+  renderVolunteers();
+}
+
+async function approveVol(id) {
+  await volsRef.child(id).update({ status:'approved', approvedAt: Date.now() });
+  toast('✅ تم قبول المتطوع','#22c55e');
+}
+
+async function rejectVol(id) {
+  if (!confirm('حذف طلب هذا المتطوع؟')) return;
+  await volsRef.child(id).remove();
+  toast('🗑️ تم رفض الطلب','#f87171');
+}
+
+function openVolProfile(id) {
+  const v = volunteers[id];
+  if (!v) return;
+  const vRecs = Object.entries(records).filter(([,r])=>r.addedBy===v.name);
+  const vRefs = vRecs.filter(([,r])=>r.referral==='Feferral').length;
+  const myVolId = localStorage.getItem('my_vol_id');
+  const isMe = myVolId === id;
+
+  let html = `<div class="panel2-header">
+    <div class="panel2-title">👤 ملف المتطوع</div>
+    <button class="close-btn" onclick="closeVolPanel()">✕</button>
+  </div>
+  <div class="vp-header">
+    <div class="vp-avatar">👤</div>
+    <div class="vp-name">${v.name}</div>
+    <div class="vp-meta">📱 ${v.phone||'—'} · 📅 سنة ${v.year||'—'}</div>
+    <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+      <span class="vol-badge-status ${v.status==='approved'?'vol-badge-approved':'vol-badge-pending'}">${v.status==='approved'?'✅ معتمد':'⏳ قيد الانتظار'}</span>
+      ${v.role?`<span class="role-badge ${roleClass(v.role)}">${roleName(v.role)}</span>`:''}
+    </div>
+  </div>
+  <div class="vp-stats">
+    <div class="vp-stat"><div class="v">${vRecs.length}</div><div class="l">سجل</div></div>
+    <div class="vp-stat"><div class="v" style="color:#f59e0b">${vRefs}</div><div class="l">تحويل</div></div>
+    <div class="vp-stat"><div class="v" style="color:#34d399">${vRecs.filter(([,r])=>r.gender==='ذكر').length}</div><div class="l">ذكور</div></div>
+    <div class="vp-stat"><div class="v" style="color:#f472b6">${vRecs.filter(([,r])=>r.gender==='أنثى').length}</div><div class="l">إناث</div></div>
+  </div>`;
+
+  if (isSupervisor && !isMe) {
+    html += `<div style="padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid #1e293b">
+      <button onclick="openRoleManager('${id}')" style="flex:1;font-family:'Tajawal',sans-serif;font-size:12px;background:#f59e0b22;color:#fbbf24;border:1px solid #f59e0b44;border-radius:8px;padding:7px;cursor:pointer">🛡️ تغيير الصلاحية</button>
+    </div>`;
+  }
+  if (isMe) {
+    html += `<div style="padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid #1e293b">`;
+      <button onclick="openEditVol('${id}')" style="flex:1;font-family:'Tajawal',sans-serif;font-size:12px;background:#6366f122;color:#a5b4fc;border:1px solid #6366f144;border-radius:8px;padding:7px;cursor:pointer">✏️ تعديل بياناتي</button>
+      <button onclick="deleteMyVol('${id}')" style="flex:1;font-family:'Tajawal',sans-serif;font-size:12px;background:#ef444422;color:#f87171;border:1px solid #ef444444;border-radius:8px;padding:7px;cursor:pointer">🗑️ حذف حسابي</button>
+    </div>`;
+  }
+
+  html += `<div class="vp-records"><div style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:10px">📋 آخر السجلات</div>`;
+  if (!vRecs.length) {
+    html += `<div style="color:#475569;font-size:12px;text-align:center;padding:20px">لا توجد سجلات بعد</div>`;
+  } else {
+    const sorted = vRecs.sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0)).slice(0,10);
+    for (const [rid,r] of sorted) {
+      const evName = r.eventId && events[r.eventId] ? events[r.eventId].name : '—';
+      html += `<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0">${r.name||'—'}</div>
+          <div style="font-size:11px;color:#64748b">🏫 ${evName} · ${r.createdAt?new Date(r.createdAt).toLocaleDateString('ar-SA'):''}</div>
+        </div>
+        ${r.referral==='Feferral'?'<span style="font-size:10px;background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:10px;padding:2px 7px">تحويل</span>':''}
+      </div>`;
+    }
+  }
+  html += `</div>`;
+
+  document.getElementById('volPanelContent').innerHTML = html;
+  document.getElementById('volPanelOverlay').classList.add('open');
+}
+
+function openEditVol(id) {
+  const v = volunteers[id];
+  if (!v) return;
+  document.getElementById('volPanelContent').innerHTML = `
+    <div class="panel2-header">
+      <div class="panel2-title">✏️ تعديل بياناتي</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:16px">
+      <div class="reg-field"><label>الاسم الكامل *</label><input type="text" id="edit-vol-name" value="${v.name}" maxlength="60"/></div>
+      <div class="reg-field"><label>رقم الجوال *</label><input type="tel" id="edit-vol-phone" value="${v.phone||''}" maxlength="15"/></div>
+      <div class="reg-field"><label>سنة التطوع</label>
+        <select id="edit-vol-year">
+          ${[2026,2025,2024,2023,2022,2021,2020].map(y=>`<option value="${y}" ${v.year==y?'selected':''}>${y}</option>`).join('')}
+        </select>
+      </div>
+      <button onclick="saveEditVol('${id}')" style="width:100%;background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:10px;padding:10px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">💾 حفظ التعديلات</button>
+    </div>`;
+}
+
+async function saveEditVol(id) {
+  const name = document.getElementById('edit-vol-name').value.trim();
+  const phone = document.getElementById('edit-vol-phone').value.trim();
+  const year = document.getElementById('edit-vol-year').value;
+  if (!name || !phone) { toast('أدخل الاسم والجوال','#f59e0b'); return; }
+  await volsRef.child(id).update({ name, phone, year });
+  volName = name;
+  localStorage.setItem('vol_name', name);
+  document.getElementById('volName').value = name;
+  toast('✅ تم تحديث بياناتك','#22c55e');
+  closeVolPanel();
+  renderVolunteers();
+}
+
+async function deleteMyVol(id) {
+  if (!confirm('حذف حسابك نهائياً؟ لن تتمكن من الاسترجاع.')) return;
+  await volsRef.child(id).remove();
+  localStorage.removeItem('my_vol_id');
+  toast('🗑️ تم حذف حسابك','#f87171');
+  closeVolPanel();
+  renderVolunteers();
+}
+
+
+function openSupervisorLogin() {
+  document.getElementById('volPanelContent').innerHTML = `
+    <div class="panel2-header">
+      <div class="panel2-title">🔐 دخول المشرف</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <div class="reg-field"><label>رقم الجوال</label><input type="tel" id="sup-phone" placeholder="05xxxxxxxx" maxlength="15"/></div>
+      <div class="reg-field"><label>كلمة السر</label><input type="password" id="sup-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginSupervisor()"/></div>
+      <button onclick="loginSupervisor()" style="width:100%;background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:10px;padding:10px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">دخول</button>
+    </div>`;
+  document.getElementById('volPanelOverlay').classList.add('open');
+}
+
+function loginSupervisor() {
+  const phone = document.getElementById('sup-phone').value.trim();
+  const pass = document.getElementById('sup-pass').value;
+  if (phone === ADMIN_PHONE && pass === ADMIN_PASS) {
+    isSupervisor = true;
+    localStorage.setItem('is_supervisor', 'true');
+    toast('✅ مرحباً بك يا مشرف', '#22c55e');
+    closeVolPanel();
+    renderVolunteers();
+  } else {
+    toast('❌ رقم الجوال أو كلمة السر غلط', '#f87171');
+  }
+}
+
+function logoutSupervisor() {
+  isSupervisor = false;
+  localStorage.removeItem('is_supervisor');
+  toast('تم تسجيل الخروج', '#94a3b8');
+  renderVolunteers();
+}
+
+
+// ── ROLE HELPERS ──────────────────────────────────────────────────────
+function getMyRole() {
+  if (isSupervisor) return 'supervisor';
+  const myVolId = localStorage.getItem('my_vol_id');
+  const myVol = myVolId && volunteers[myVolId];
+  if (!myVol || myVol.status !== 'approved') return 'reader';
+  return myVol.role || 'volunteer';
+}
+
+function canEdit() {
+  return isSupervisor || getMyRole() === 'volunteer';
+}
+
+function roleName(role) {
+  return role === 'supervisor' ? '🔐 مشرف' : role === 'reader' ? '👁️ قارئ' : '✅ متطوع';
+}
+
+function roleClass(role) {
+  return role === 'supervisor' ? 'role-supervisor' : role === 'reader' ? 'role-reader' : 'role-volunteer';
+}
+
+// ── ACTIVITY LOG ──────────────────────────────────────────────────────
+async function logActivity(action, detail, color) {
+  await activityRef.push({
+    who: volName || 'مجهول',
+    action, detail, color,
+    ts: Date.now()
+  });
+}
+
+function showActivityLog() {
+  const items = Object.values(activityLog).sort((a,b)=>b.ts-a.ts).slice(0,40);
+  const html = items.length ? items.map(i => {
+    const t = new Date(i.ts);
+    const timeStr = t.toLocaleDateString('ar-SA',{month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="activity-item">
+      <div class="activity-dot" style="background:${i.color||'#60a5fa'}"></div>
+      <div class="activity-text"><b>${i.who}</b> ${i.action} <span style="color:#e2e8f0">${i.detail||''}</span></div>
+      <div class="activity-time">${timeStr}</div>
+    </div>`;
+  }).join('') : '<div style="color:#475569;text-align:center;padding:20px;font-size:12px">لا يوجد نشاط بعد</div>';
+
+  document.getElementById('volPanelContent').innerHTML = `
+    <div class="panel2-header">
+      <div class="panel2-title">📋 سجل النشاط</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:12px 14px">${html}</div>`;
+  document.getElementById('volPanelOverlay').classList.add('open');
+}
+
+// ── CHAT & NOTES ──────────────────────────────────────────────────────
+function openEventChat(evId) {
+  currentChatEventId = evId;
+  const ev = events[evId] || {};
+  let activeTab = 'chat';
+
+  function render(tab) {
+    activeTab = tab;
+    const msgs = Object.values(chatMessages).filter(m=>m.eventId===evId).sort((a,b)=>a.ts-b.ts);
+    const notes = Object.values(eventNotes).filter(n=>n.eventId===evId).sort((a,b)=>b.ts-a.ts);
+
+    let inner = `<div class="panel2-header">
+      <div class="panel2-title">💬 ${ev.name||''}</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:10px 12px 0">
+      <div class="tab-btns">
+        <button class="tab-btn ${tab==='chat'?'active':''}" onclick="openEventChat('${evId}');document.querySelectorAll('.tab-btn')[0].click()">💬 دردشة</button>
+        <button class="tab-btn ${tab==='notes'?'active':''}" onclick="renderNotesTab('${evId}')">📌 ملاحظات</button>
+      </div>
+    </div>`;
+
+    if (tab === 'chat') {
+      const msgsHtml = msgs.map(m => {
+        const isMe = m.who === volName;
+        const t = new Date(m.ts).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+        return `<div class="chat-msg ${isMe?'mine':'theirs'}">
+          <div class="msg-meta">${isMe?'أنت':m.who} · ${t}</div>
+          ${m.text}
+        </div>`;
+      }).join('') || '<div style="color:#475569;text-align:center;padding:20px;font-size:12px">لا توجد رسائل بعد، كن الأول! 👋</div>';
+
+      inner += `<div class="chat-wrap">
+        <div class="chat-messages" id="chatMsgsBox">${msgsHtml}</div>
+        ${canEdit() ? `<div class="chat-input-row">
+          <input type="text" id="chatInput" placeholder="اكتب رسالة..." maxlength="300" onkeydown="if(event.key==='Enter')sendChatMsg('${evId}')"/>
+          <button class="chat-send-btn" onclick="sendChatMsg('${evId}')">➤</button>
+        </div>` : '<div style="padding:8px;text-align:center;font-size:11px;color:#475569">القراء لا يستطيعون إرسال رسائل</div>'}
+      </div>`;
+    }
+
+    document.getElementById('volPanelContent').innerHTML = inner;
+    document.getElementById('volPanelOverlay').classList.add('open');
+    // Scroll chat to bottom
+    setTimeout(()=>{const b=document.getElementById('chatMsgsBox');if(b)b.scrollTop=b.scrollHeight;},50);
+
+    // Wire tab buttons
+    const tabs = document.querySelectorAll('.tab-btn');
+    if (tabs[0]) tabs[0].onclick = () => openEventChat(evId);
+    if (tabs[1]) tabs[1].onclick = () => renderNotesTab(evId);
+  }
+
+  render('chat');
+}
+
+function renderNotesTab(evId) {
+  currentChatEventId = evId;
+  const ev = events[evId] || {};
+  const notes = Object.values(eventNotes).filter(n=>n.eventId===evId).sort((a,b)=>b.ts-a.ts);
+
+  const notesHtml = notes.map(n => {
+    const t = new Date(n.ts).toLocaleDateString('ar-SA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    const isMe = n.who === volName;
+    return `<div class="note-item">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="note-author">${n.who}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="note-time">${t}</span>
+          ${(isMe||isSupervisor)?`<button onclick="deleteNote('${n._id}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:11px">🗑️</button>`:''}
+        </div>
+      </div>
+      <div class="note-text">${n.text}</div>
+    </div>`;
+  }).join('') || '<div style="color:#475569;text-align:center;padding:20px;font-size:12px">لا توجد ملاحظات بعد</div>';
+
+  document.getElementById('volPanelContent').innerHTML = `
+    <div class="panel2-header">
+      <div class="panel2-title">💬 ${ev.name||''}</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:10px 12px 0">
+      <div class="tab-btns">
+        <button class="tab-btn" onclick="openEventChat('${evId}')">💬 دردشة</button>
+        <button class="tab-btn active">📌 ملاحظات</button>
+      </div>
+    </div>
+    <div style="padding:0 12px 12px">
+      ${canEdit() ? `<div style="display:flex;gap:6px;margin-bottom:10px">
+        <input type="text" id="noteInput" placeholder="أضف ملاحظة على الفعالية..." maxlength="300" style="flex:1;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:7px 12px;font-family:'Tajawal',sans-serif;font-size:13px" onkeydown="if(event.key==='Enter')addNote('${evId}')"/>
+        <button onclick="addNote('${evId}')" style="background:linear-gradient(90deg,#0ea5e9,#6366f1);border:none;color:#fff;border-radius:8px;padding:7px 14px;cursor:pointer;font-family:'Tajawal',sans-serif;font-weight:700;font-size:12px">إضافة</button>
+      </div>` : ''}
+      ${notesHtml}
+    </div>`;
+  document.getElementById('volPanelOverlay').classList.add('open');
+}
+
+async function sendChatMsg(evId) {
+  if (!canEdit()) return;
+  const inp = document.getElementById('chatInput');
+  const text = inp ? inp.value.trim() : '';
+  if (!text || !volName) { toast('اكتب اسمك أولاً','#f59e0b'); return; }
+  inp.value = '';
+  await chatRef.push({ eventId:evId, who:volName, text, ts:Date.now() });
+}
+
+function renderChatMessages(evId) {
+  const box = document.getElementById('chatMsgsBox');
+  if (!box) return;
+  const msgs = Object.values(chatMessages).filter(m=>m.eventId===evId).sort((a,b)=>a.ts-b.ts);
+  box.innerHTML = msgs.map(m => {
+    const isMe = m.who === volName;
+    const t = new Date(m.ts).toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="chat-msg ${isMe?'mine':'theirs'}">
+      <div class="msg-meta">${isMe?'أنت':m.who} · ${t}</div>
+      ${m.text}
+    </div>`;
+  }).join('') || '<div style="color:#475569;text-align:center;padding:20px;font-size:12px">لا توجد رسائل بعد 👋</div>';
+  box.scrollTop = box.scrollHeight;
+}
+
+async function addNote(evId) {
+  if (!canEdit()) return;
+  const inp = document.getElementById('noteInput');
+  const text = inp ? inp.value.trim() : '';
+  if (!text || !volName) { toast('اكتب اسمك أولاً','#f59e0b'); return; }
+  inp.value = '';
+  const ref = await notesRef.push({ eventId:evId, who:volName, text, ts:Date.now() });
+  await notesRef.child(ref.key).update({ _id: ref.key });
+  renderNotesTab(evId);
+}
+
+async function deleteNote(noteId) {
+  if (!noteId) return;
+  if (!confirm('حذف هذه الملاحظة؟')) return;
+  await notesRef.child(noteId).remove();
+  toast('🗑️ تم حذف الملاحظة','#f87171');
+}
+
+// ── ROLE MANAGEMENT ───────────────────────────────────────────────────
+function openRoleManager(volId) {
+  const v = volunteers[volId];
+  if (!v || !isSupervisor) return;
+  document.getElementById('volPanelContent').innerHTML = `
+    <div class="panel2-header">
+      <div class="panel2-title">🛡️ تغيير صلاحية ${v.name}</div>
+      <button class="close-btn" onclick="closeVolPanel()">✕</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <button onclick="setVolRole('${volId}','volunteer')" style="font-family:'Tajawal',sans-serif;padding:12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;background:#22c55e22;color:#22c55e;border:1px solid #22c55e44">✅ متطوع — يضيف ويعدل</button>
+      <button onclick="setVolRole('${volId}','reader')" style="font-family:'Tajawal',sans-serif;padding:12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;background:#60a5fa22;color:#60a5fa;border:1px solid #60a5fa44">👁️ قارئ — يشوف فقط</button>
+    </div>`;
+}
+
+async function setVolRole(volId, role) {
+  await volsRef.child(volId).update({ role });
+  toast(`✅ تم تغيير الصلاحية إلى ${roleName(role)}`,'#22c55e');
+  closeVolPanel();
+  renderVolunteers();
+}
+
+function closeVolPanel() {
+  document.getElementById('volPanelOverlay').classList.remove('open');
+}
+
+// Close vol panel on overlay click
+document.getElementById('volPanelOverlay').addEventListener('click', function(e){
+  if (e.target === this) closeVolPanel();
+});
+
+</script>
+
+<!-- PANEL: Volunteer Profile/Register -->
+<div class="panel-overlay2" id="volPanelOverlay">
+  <div class="panel2" id="volPanelContent"></div>
+</div>
+
+</body>
+</html>
